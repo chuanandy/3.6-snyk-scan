@@ -46,7 +46,7 @@ jobs:
   snyk-checks:
     name: Snyk Security Scans
     runs-on: ubuntu-latest
-      outputs:
+    outputs:
       status: ${{ steps.snyk-result.outcome }}
 
     steps:
