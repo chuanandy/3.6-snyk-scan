@@ -89,7 +89,7 @@ jobs:
 
 Name: Build Summary
 
-  needs: [terraform-checks, snyk-checks]
+needs: [terraform-checks, snyk-checks]
   runs-on: ubuntu-latest
   steps:
     - name: Adding markdown
