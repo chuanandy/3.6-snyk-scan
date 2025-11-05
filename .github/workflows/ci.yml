@@ -96,14 +96,3 @@ jobs:
       - name: Set job status
         id: snyk-result
         run: echo "Snyk scan completed"
-
-
-    # ---- Determine job status for summary ----
-    - name: Set job status
-      id: snyk-result
-      run: |
-        STATUS="success"
-        if grep -q "✗" <<< "$(cat $GITHUB_STEP_SUMMARY 2>/dev/null)"; then
-          STATUS="issues_found"
-        fi
-        echo "status=$STATUS" >> $GITHUB_OUTPUT  
