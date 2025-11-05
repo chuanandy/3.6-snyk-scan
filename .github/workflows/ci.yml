@@ -87,7 +87,7 @@ jobs:
         id: snyk-result
         run: echo "Snyk scan completed"
 
-summary:
+build-summary:
   name: Build Summary
   needs: [terraform-checks, snyk-checks]
   runs-on: ubuntu-latest
