@@ -1,0 +1,76 @@
+name: Terraform Lambda CI with Docker & Snyk
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-checks:
+    name: Terraform Validation & Plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -no-color
+
+  snyk-checks:
+    name: Snyk Security Scans
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      - name: Authenticate Snyk
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+
+      # 1️⃣ IaC Scan
+      - name: Snyk IaC Scan (Terraform)
+        run: snyk iac test --severity-threshold=high
+
+      # 2️⃣ Dependency Scan
+      - name: Snyk Dependency Scan
+        run: |
+          if [ -f "requirements.txt" ]; then
+            snyk test --file=requirements.txt --package-manager=pip
+          else
+            echo "No Python dependencies found."
+          fi
+
+      # 3️⃣ Container Scan (Docker image)
+      - name: Build Docker image
+        run: docker build -t hello-world-flask .
+
+      - name: Snyk Container Scan
+        run: snyk container test hello-world-flask --severity-threshold=high
