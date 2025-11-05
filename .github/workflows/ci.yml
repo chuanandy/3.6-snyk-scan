@@ -46,6 +46,8 @@ jobs:
   snyk-checks:
     name: Snyk Security Scans
     runs-on: ubuntu-latest
+      outputs:
+      status: ${{ steps.snyk-result.outcome }}
 
     steps:
       - name: Checkout code
@@ -62,22 +64,45 @@ jobs:
       - name: Authenticate Snyk
         run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
-      # 1️⃣ IaC Scan
+      # IaC Scan
       - name: Snyk IaC Scan (Terraform)
         run: snyk iac test --severity-threshold=high
 
-      # 2️⃣ Dependency Scan
-      - name: Snyk Dependency Scan
-        run: |
-          if [ -f "requirements.txt" ]; then
-            snyk test --file=requirements.txt --package-manager=pip
-          else
-            echo "No Python dependencies found."
-          fi
+      # Code Scan
+      - name: Snyk Code Scan
+        run: snyk code test --severity-threshold=high
 
-      # 3️⃣ Container Scan (Docker image)
+      # Snyk-test
+      - name: Run snyk test
+        run: snyk test
+
+      # Container Scan (Docker image)
       - name: Build Docker image
         run: docker build -t hello-world-flask .
 
       - name: Snyk Container Scan
         run: snyk container test hello-world-flask --severity-threshold=high
+
+      - name: Set job status
+        id: snyk-result
+        run: echo "Snyk scan completed"
+
+summary:
+  needs: [terraform-checks, snyk-checks]
+  runs-on: ubuntu-latest
+  steps:
+    - name: Adding markdown
+      run: |
+        TF_STATUS=${{ needs.terraform-checks.outputs.status }}
+        SNYK_STATUS=${{ needs.snyk-checks.outputs.status }}
+
+        echo '## 🚀 Preparing Build Summary 🚀' >> $GITHUB_STEP_SUMMARY
+        echo '' >> $GITHUB_STEP_SUMMARY
+
+        echo "| Job Name        | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| tf-check       | $TF_STATUS |" >> $GITHUB_STEP_SUMMARY
+        echo "| snyk-check     | $SNYK_STATUS |" >> $GITHUB_STEP_SUMMARY
+        echo '' >> $GITHUB_STEP_SUMMARY
+
+        echo '## Job ran by: ${{ github.actor }}' >> $GITHUB_STEP_SUMMARY
