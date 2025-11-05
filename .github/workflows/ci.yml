@@ -86,24 +86,3 @@ jobs:
       - name: Set job status
         id: snyk-result
         run: echo "Snyk scan completed"
-
-Name: Build Summary
-
-needs: [terraform-checks, snyk-checks]
-  runs-on: ubuntu-latest
-  steps:
-    - name: Adding markdown
-      run: |
-        TF_STATUS=${{ needs.terraform-checks.outputs.status }}
-        SNYK_STATUS=${{ needs.snyk-checks.outputs.status }}
-
-        echo '## 🚀 Preparing Build Summary 🚀' >> $GITHUB_STEP_SUMMARY
-        echo '' >> $GITHUB_STEP_SUMMARY
-
-        echo "| Job Name        | Status |" >> $GITHUB_STEP_SUMMARY
-        echo "|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "| tf-check       | $TF_STATUS |" >> $GITHUB_STEP_SUMMARY
-        echo "| snyk-check     | $SNYK_STATUS |" >> $GITHUB_STEP_SUMMARY
-        echo '' >> $GITHUB_STEP_SUMMARY
-
-        echo '## Job ran by: ${{ github.actor }}' >> $GITHUB_STEP_SUMMARY
